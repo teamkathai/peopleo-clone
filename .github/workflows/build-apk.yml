@@ -18,6 +18,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.24.5
 
       - name: Flutter create (platform scaffolding)
         run: flutter create --org com.oasystspl --project-name peopleo_clone --platforms android .
