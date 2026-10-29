@@ -18,10 +18,12 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> login(String email, String password) async {
-    _loading = true; _error = null; notifyListeners();
+  Future<bool> login(String mobile, String password) async {
+    _loading = true;
+    _error = null;
+    notifyListeners();
     try {
-      final body = await _auth.login(email: email, password: password);
+      final body = await _auth.login(mobile: mobile, password: password);
       final ok = (body['status'] == true) ||
           (body['success'] == true) ||
           (body['token'] != null) ||
@@ -33,7 +35,8 @@ class AuthProvider extends ChangeNotifier {
       _error = 'Network error: $e';
       return false;
     } finally {
-      _loading = false; notifyListeners();
+      _loading = false;
+      notifyListeners();
     }
   }
 
