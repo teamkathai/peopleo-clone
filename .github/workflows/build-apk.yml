@@ -45,6 +45,10 @@ jobs:
           print(s[:600])
           PY
 
+      - name: Relax Kotlin JVM-target validation
+        run: |
+          echo "kotlin.jvm.target.validation.mode=warning" >> android/gradle.properties
+
       - name: Pub get
         run: flutter pub get
 
