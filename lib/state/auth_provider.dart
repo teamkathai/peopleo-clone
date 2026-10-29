@@ -24,10 +24,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final body = await _auth.login(mobile: mobile, password: password);
-      final ok = (body['status'] == true) ||
-          (body['success'] == true) ||
-          (body['token'] != null) ||
-          (body['data']?['token'] != null);
+      final ok = (body['status'] == true) || (body['success'] == true);
       _loggedIn = ok;
       if (!ok) _error = (body['message'] ?? 'Login failed').toString();
       return ok;
