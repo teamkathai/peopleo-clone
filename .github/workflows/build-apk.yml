@@ -19,9 +19,31 @@ jobs:
         with:
           channel: stable
 
-      # Generate android/ios platform folders around the source in this repo.
       - name: Flutter create (platform scaffolding)
-        run: flutter create --org com.oasystspl --project-name peopleo_clone .
+        run: flutter create --org com.oasystspl --project-name peopleo_clone --platforms android .
+
+      - name: Inject Android permissions
+        run: |
+          python3 - <<'PY'
+          import re, io
+          p = "android/app/src/main/AndroidManifest.xml"
+          s = open(p, encoding="utf-8").read()
+          perms = [
+              "android.permission.INTERNET",
+              "android.permission.CAMERA",
+              "android.permission.ACCESS_FINE_LOCATION",
+              "android.permission.ACCESS_COARSE_LOCATION",
+              "android.permission.USE_BIOMETRIC",
+              "android.permission.POST_NOTIFICATIONS",
+              "android.permission.ACCESS_NETWORK_STATE",
+              "android.permission.WAKE_LOCK",
+          ]
+          lines = "".join(f'    <uses-permission android:name="{x}"/>\n' for x in perms)
+          # insert right after the opening <manifest ...> tag
+          s = re.sub(r"(<manifest[^>]*>\n)", r"\1" + lines, s, count=1)
+          open(p, "w", encoding="utf-8").write(s)
+          print(s[:600])
+          PY
 
       - name: Pub get
         run: flutter pub get
