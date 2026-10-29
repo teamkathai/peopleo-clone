@@ -55,8 +55,17 @@ jobs:
       - name: Build debug APK
         run: flutter build apk --debug
 
+      - name: Build slim release APKs (split per ABI)
+        run: flutter build apk --release --split-per-abi
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: peopleo-clone-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
+
+      - name: Upload slim APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: peopleo-clone-split-apks
+          path: build/app/outputs/flutter-apk/app-*-release.apk
