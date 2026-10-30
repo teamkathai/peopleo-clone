@@ -57,6 +57,15 @@ class DashboardService {
       out.designation =
           _s(d, ['designation_name', 'designation', 'role']) ?? out.designation;
       out.photoUrl = _s(d, ['profile_image', 'profile_pic', 'photo', 'image']);
+      final locs = d['locations'];
+      if (locs is List) {
+        for (final l in locs) {
+          if (l is Map) {
+            final n = '${l['location_name'] ?? ''}'.trim();
+            if (n.isNotEmpty && n != 'null') { out.locationName = n; break; }
+          }
+        }
+      }
     } catch (_) {}
     try {
       final r = await _attendance.punchRecords();
@@ -69,7 +78,8 @@ class DashboardService {
         out.checkOut = _timeOnly(co);
         final dur = _s(rec, ['duration', 'total_hours', 'total_hour', 'working_hours']);
         if (dur != null) out.totalHours = dur.contains('Hr') ? dur : '$dur Hrs';
-        out.locationName = _s(rec, ['location', 'client', 'branch']) ?? out.locationName;
+        final recLoc = _s(rec, ['location', 'location_name']);
+        if (recLoc != null) out.locationName = recLoc;
         out.punchedIn = ci != null && (co == null || co.isEmpty);
       }
     } catch (_) {}
