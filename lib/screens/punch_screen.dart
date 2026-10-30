@@ -33,38 +33,57 @@ class _PunchScreenState extends State<PunchScreen> {
     setState(() { _busy = true; _status = 'Capturing face...'; });
     try {
       final enrolled = await FaceStore.load();
-      if (enrolled == null) {
-        setState(() => _status = 'No enrolled face. Use Register Face first.');
-        return;
-      }
       final cap = await Navigator.push<FaceCaptureResult>(
         context, MaterialPageRoute(builder: (_) => FaceCaptureScreen(prompt: 'Punch ${widget.punchType.toUpperCase()}')),
       );
       if (cap == null) { setState(() => _status = 'Cancelled'); return; }
       if (!cap.live) { setState(() => _status = 'Liveness failed \u2014 please blink.'); return; }
-      if (!_recognizer.isReady) { setState(() => _status = 'Face model missing (add mobilefacenet.tflite).'); return; }
 
-      final emb = _recognizer.embed(cap.crop);
-      if (emb == null) { setState(() => _status = 'Could not read face.'); return; }
-      final sim = FaceRecognizer.similarity(enrolled, emb);
-      final matched = sim >= ApiConfig.faceMatchThreshold;
-      setState(() => _status = 'Similarity ${sim.toStringAsFixed(3)} \u2014 ${matched ? "MATCH" : "NO MATCH"}');
-      if (!matched) return;
+      bool matched = true;
+      double? sim;
+      // Only enforce face matching when both a model and an enrolled face exist.
+      if (_recognizer.isReady && enrolled != null) {
+        final emb = _recognizer.embed(cap.crop);
+        if (emb == null) { setState(() => _status = 'Could not read face.'); return; }
+        sim = FaceRecognizer.similarity(enrolled, emb);
+        matched = sim >= ApiConfig.faceMatchThreshold;
+        setState(() => _status = 'Similarity ${sim!.toStringAsFixed(3)} \u2014 ${matched ? "MATCH" : "NO MATCH"}');
+        if (!matched) return;
+      }
 
       setState(() => _status = 'Getting location...');
       final pos = await _location();
       if (pos == null) { setState(() => _status = 'Location permission needed.'); return; }
+
+      setState(() => _status = 'Finding nearest site...');
+      String? locId;
+      try {
+        final near = await _attendance.nearestLocation(pos.latitude, pos.longitude);
+        if (near != null) {
+          locId = near.id;
+          if (!near.inRange) {
+            setState(() => _status =
+                'You are ${near.distanceM.round()} m from ${near.name} (allowed ${near.radiusM.round()} m).');
+            return;
+          }
+        }
+      } catch (_) {/* location list optional */}
 
       setState(() => _status = 'Submitting punch...');
       final res = await _attendance.punch(
         punchType: widget.punchType,
         latitude: pos.latitude,
         longitude: pos.longitude,
+        locationId: locId,
         selfie: cap.jpeg,
         faceMatched: matched,
         similarity: sim,
       );
-      setState(() => _status = (res['message'] ?? 'Punch submitted').toString());
+      final ok = res['status'] == true;
+      final msg = (res['message']?.toString().isNotEmpty ?? false)
+          ? res['message'].toString()
+          : (ok ? 'Punch ${widget.punchType} recorded.' : 'Punch failed.');
+      setState(() => _status = msg);
     } catch (e) {
       setState(() => _status = 'Error: $e');
     } finally {
