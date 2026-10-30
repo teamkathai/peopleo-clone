@@ -84,8 +84,8 @@ class DashboardService {
         final ip = rec['is_punchout'];
         if (ip is bool) {
           out.punchedIn = ip;
-        } else if (ip != null && '\$ip' != 'null') {
-          out.punchedIn = '\$ip' == 'true' || '\$ip' == '1';
+        } else if (ip != null && '$ip' != 'null') {
+          out.punchedIn = '$ip' == 'true' || '$ip' == '1';
         } else {
           out.punchedIn = _timeOnly(ci) != '--:--' && _timeOnly(co) == '--:--';
         }
