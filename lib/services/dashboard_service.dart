@@ -72,15 +72,23 @@ class DashboardService {
       var list = r is Map ? r['data'] : r;
       if (list is List && list.isNotEmpty && list.first is Map) {
         final rec = list.first as Map; // most recent / today
-        final ci = _s(rec, ['in_time', 'check_in', 'checkin', 'punch_in_time']);
-        final co = _s(rec, ['out_time', 'check_out', 'checkout', 'punch_out_time']);
+        final ci = _s(rec, ['in_time', 'punch_in', 'check_in']);
+        final co = _s(rec, ['out_time', 'punch_out', 'check_out']);
         out.checkIn = _timeOnly(ci);
         out.checkOut = _timeOnly(co);
-        final dur = _s(rec, ['duration', 'total_hours', 'total_hour', 'working_hours']);
+        final dur = _s(rec, ['duration', 'total_hours', 'working_hours']);
         if (dur != null) out.totalHours = dur.contains('Hr') ? dur : '$dur Hrs';
         final recLoc = _s(rec, ['location', 'location_name']);
         if (recLoc != null) out.locationName = recLoc;
-        out.punchedIn = ci != null && (co == null || co.isEmpty);
+        // is_punchout==true means they have checked in and not yet out.
+        final ip = rec['is_punchout'];
+        if (ip is bool) {
+          out.punchedIn = ip;
+        } else if (ip != null && '\$ip' != 'null') {
+          out.punchedIn = '\$ip' == 'true' || '\$ip' == '1';
+        } else {
+          out.punchedIn = _timeOnly(ci) != '--:--' && _timeOnly(co) == '--:--';
+        }
       }
     } catch (_) {}
     return out;
