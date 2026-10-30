@@ -1,0 +1,29 @@
+name: blutter
+on:
+  push:
+    branches: [re]
+jobs:
+  decompile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: deps
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y python3-pyelftools python3-requests git cmake ninja-build build-essential pkg-config libicu-dev libcapstone-dev
+      - name: blutter
+        run: |
+          git clone --depth 1 https://github.com/worawit/blutter.git
+          cd blutter
+          python3 blutter.py ../bin ../out
+      - name: pack
+        if: always()
+        run: |
+          ls -la out || true
+          tar czf blutter-out.tgz out || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: blutter-out
+          path: blutter-out.tgz
